@@ -1,0 +1,39 @@
+{
+  "name": "Blockchain-School",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "prepare": "husky install",
+    "build": "yarn clean && yarn compile",
+    "clean": "hardhat clean",
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "lint-ts": "eslint \"deploy/*.{js,ts}\" --quiet --fix",
+    "lint-sol": "solhint \"contracts/**/*.sol\"",
+    "format-ts": "prettier -w \"**/*.{ts, js, yml, json}\"",
+    "format-deploy-ts": "prettier -w \"deploy/*.{ts, js, yml, json}\"",
+    "format-sol": "prettier -w \"contracts/**/*.sol\"",
+    "fix-ts": "yarn lint-ts && yarn format-ts",
+    "fix-sol": "yarn lint-sol && yarn format-sol",
+    "fix": "yarn fix-ts && yarn fix-sol"
+  },
+  "devDependencies": {
+    "@nomiclabs/hardhat-ethers": "^2.0.6",
+    "@openzeppelin/contracts": "^4.6.0",
+    "@typechain/ethers-v4": "^7.0.0",
+    "@typechain/ethers-v5": "^10.0.0",
+    "@typechain/hardhat": "^6.0.0",
+    "@types/chai": "^4.3.1",
+    "@types/jest": "^27.5.1",
+    "chai": "^4.3.6",
+    "ethers": "^5.6.8",
+    "hardhat": "^2.9.6",
+    "hardhat-gas-reporter": "^1.0.8",
+    "hardhat-typechain": "^0.3.5",
+    "husky": "^8.0.1",
+    "ts-node": "^10.8.0",
+    "typechain": "^8.0.0",
+    "typescript": "^4.7.2"
+  }
+}
