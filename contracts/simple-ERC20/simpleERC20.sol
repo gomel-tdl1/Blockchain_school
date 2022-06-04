@@ -29,6 +29,13 @@ contract SimpleERC20 is ERC20, Ownable {
         _mint(address(this), initialSupply);
     }
 
+    modifier onlyFivePercentsHolder() {
+        uint256 balancePercent = calculateBalancePercents(balanceOf(msg.sender));
+        require(balancePercent >= 500, "balance percent < 5%");
+
+        _;
+    }
+
     function calculateBalancePercents(uint256 _balance) public view returns(uint256) {
         return _balance / totalSupply() * 10000;
     }
@@ -37,21 +44,18 @@ contract SimpleERC20 is ERC20, Ownable {
         _startVotingTimestamp = 0;
     }
 
-    function startVoting(uint256 _price) external {
+    function startVoting(uint256 _price) external onlyFivePercentsHolder(){
         require(_startVotingTimestamp != 0, "voting already started");
         ++prevVotingNumber;
         _startVotingTimestamp = uint64(block.timestamp);
         currentVoting = Vote(msg.sender, prevVotingNumber, 0, 0, _price);
     }
 
-    function votePriceChange(bool _agreement) external {
+    function votePriceChange(bool _agreement) external onlyFivePercentsHolder(){
         require(_startVotingTimestamp == 0, "!voting");
         require(!_isVoterVoted[msg.sender][currentVoting.votingNumber], "user already voted");
 
-        uint256 balancePercent = calculateBalancePercents(balanceOf(msg.sender));
         uint256 endVotingTimestamp = _startVotingTimestamp + timeToVote;
-
-        require(balancePercent >= 500, "balance percent < 5%");
         require(endVotingTimestamp > block.timestamp && _startVotingTimestamp < block.timestamp, "!voting" );
 
         if(_agreement) currentVoting.votedAgree++;
@@ -60,7 +64,7 @@ contract SimpleERC20 is ERC20, Ownable {
     }
 
     function changePriceAndClearVoting() external {
-        require(_startVotingTimestamp + timeToVote < uint64(block.timestamp), "!end");
+        require(_startVotingTimestamp + timeToVote < block.timestamp, "!end");
 
         if(currentVoting.votedAgree > currentVoting.votedDesagree){
             price = currentVoting.newPrice;
