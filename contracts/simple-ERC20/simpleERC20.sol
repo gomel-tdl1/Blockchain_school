@@ -21,7 +21,7 @@ contract SimpleERC20 is ERC20, Ownable, ReentrancyGuard {
 
     mapping(address => mapping(uint256 => bool)) private _isVoterVoted;
 
-    uint256 private _startVotingTimestamp;
+    uint256 public startVotingTimestamp;
 
     constructor(uint256 _timeToVote, uint256 _price, uint256 initialSupply, string memory _name, string memory _symbol) public ERC20(_name, _symbol) {
         timeToVote = _timeToVote;
@@ -38,26 +38,27 @@ contract SimpleERC20 is ERC20, Ownable, ReentrancyGuard {
     }
 
     function calculateBalancePercents(uint256 _balance) public view returns(uint256) {
-        return _balance / totalSupply() * 10000;
+        return _balance * 10000 / totalSupply();
     }
 
     function _clearVoting() private {
-        _startVotingTimestamp = 0;
+        startVotingTimestamp = 0;
     }
 
     function startVoting(uint256 _price) external onlyFivePercentsHolder(){
-        require(_startVotingTimestamp != 0, "voting already started");
+        require(startVotingTimestamp == 0, "voting already started");
         ++prevVotingNumber;
-        _startVotingTimestamp = uint64(block.timestamp);
+        startVotingTimestamp = block.timestamp;
         currentVoting = Vote(msg.sender, prevVotingNumber, 0, 0, _price);
     }
 
     function votePriceChange(bool _agreement) external onlyFivePercentsHolder(){
-        require(_startVotingTimestamp == 0, "!voting");
+        require(startVotingTimestamp != 0, "!voting");
+        require(currentVoting.votingOwner != msg.sender, "owner");
         require(!_isVoterVoted[msg.sender][currentVoting.votingNumber], "user already voted");
 
-        uint256 endVotingTimestamp = _startVotingTimestamp + timeToVote;
-        require(endVotingTimestamp > block.timestamp && _startVotingTimestamp < block.timestamp, "!voting" );
+        uint256 endVotingTimestamp = startVotingTimestamp + timeToVote;
+        require(endVotingTimestamp > block.timestamp && startVotingTimestamp < block.timestamp, "!voting" );
 
         if(_agreement) currentVoting.votedAgree++;
         if(!_agreement) currentVoting.votedDesagree++;
@@ -65,7 +66,7 @@ contract SimpleERC20 is ERC20, Ownable, ReentrancyGuard {
     }
 
     function changePriceAndClearVoting() external {
-        require(_startVotingTimestamp + timeToVote < block.timestamp, "!end");
+        require(startVotingTimestamp + timeToVote < block.timestamp, "!end");
 
         if(currentVoting.votedAgree > currentVoting.votedDesagree){
             price = currentVoting.newPrice;
@@ -85,9 +86,9 @@ contract SimpleERC20 is ERC20, Ownable, ReentrancyGuard {
     }
 
     function sell(uint256 _amount) external nonReentrant(){
-        bool transferBool = transferFrom(msg.sender, address(this), _amount);
+        bool transferBool = transfer(address(this), _amount);
         require(transferBool);
-        
+
         uint256 amountForSend = (_amount * price) / 10 ** 18;
         payable(msg.sender).transfer(amountForSend);
     }
