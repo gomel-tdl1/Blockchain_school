@@ -3,6 +3,7 @@ pragma solidity ^0.8.6;
 
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
+import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 
 struct Vote {
     address votingOwner;
@@ -12,7 +13,7 @@ struct Vote {
     uint256 newPrice;
 }
 
-contract SimpleERC20 is ERC20, Ownable {
+contract SimpleERC20 is ERC20, Ownable, ReentrancyGuard {
     uint256 public timeToVote;
     uint256 public price;
     uint256 public prevVotingNumber;
@@ -77,13 +78,16 @@ contract SimpleERC20 is ERC20, Ownable {
         _clearVoting();
     }
 
-    function buy() external payable {
+    function buy() external payable nonReentrant() {
         uint256 amountForTransfer = (msg.value / price) * 10 ** 18;
-        bool transferBool = transferFrom(address(this), msg.sender, amountForTransfer);
+        bool transferBool = this.transfer(msg.sender, amountForTransfer);
         require(transferBool);
     }
 
-    function sell(uint256 _amount) external {
+    function sell(uint256 _amount) external nonReentrant(){
+        bool transferBool = transferFrom(msg.sender, address(this), _amount);
+        require(transferBool);
+        
         uint256 amountForSend = (_amount * price) / 10 ** 18;
         payable(msg.sender).transfer(amountForSend);
     }
